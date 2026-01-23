@@ -1,0 +1,171 @@
+================================================================================
+PARTE 4: ADMINISTRACIÓN DE DISPOSITIVOS DE ENTRADA Y SALIDA
+================================================================================
+
+COMANDOS PARA EJECUTAR EN TU SERVER UBUNTU
+-------------------------------------------
+
+1. IDENTIFICACIÓN DE DISPOSITIVOS DE ALMACENAMIENTO
+   
+   # Listar todos los dispositivos de bloque (discos, particiones)
+   lsblk
+   
+   # Ver información detallada de discos
+   lsblk -f
+   
+   # Mostrar espacio en disco
+   df -h
+   
+   # Información de sistema de archivos
+   sudo fdisk -l
+
+
+2. IDENTIFICACIÓN DE DISPOSITIVOS PCI (tarjetas de red, GPU, etc.)
+   
+   # Listar todos los dispositivos PCI
+   lspci
+   
+   # Ver con más detalle
+   lspci -v
+   
+   # Ver SOLO controladores de almacenamiento
+   lspci | grep -i storage
+   
+   # Ver SOLO controladores de red
+   lspci | grep -i network
+
+
+3. IDENTIFICACIÓN DE DISPOSITIVOS USB
+   
+   # Listar dispositivos USB conectados
+   lsusb
+   
+   # Ver con más detalle
+   lsusb -v
+
+
+4. INFORMACIÓN DEL SISTEMA DE E/S
+   
+   # Ver estadísticas de E/S de discos
+   iostat
+   
+   # Monitorear E/S en tiempo real
+   iostat -x 2
+   
+   # Ver interrupciones del sistema
+   cat /proc/interrupts
+   
+   # Ver uso de DMA
+   cat /proc/dma
+
+
+5. DISPOSITIVOS DE ENTRADA (teclado, ratón)
+   
+   # Listar todos los dispositivos de entrada
+   cat /proc/bus/input/devices
+   
+   # Ver eventos de entrada
+   ls -la /dev/input/
+
+
+6. INFORMACIÓN COMPLETA DEL HARDWARE
+   
+   # Información general del sistema
+   sudo lshw
+   
+   # Solo información de almacenamiento
+   sudo lshw -class disk
+   
+   # Solo información de red
+   sudo lshw -class network
+
+
+7. ARCHIVOS QUE USA TU APLICACIÓN
+   
+   # Ver qué archivos tiene abiertos tu programa
+   # (ejecuta mientras corre tu script de Mandelbrot)
+   lsof -c python3
+   
+   # Ver procesos que usan un archivo específico
+   lsof mandelbrot_multihilo_8hilos_color.png
+
+
+================================================================================
+ANÁLISIS PARA TU REPORTE
+================================================================================
+
+DISPOSITIVOS QUE USA TU APLICACIÓN:
+-----------------------------------
+
+ENTRADA:
+- Código fuente (.py)
+- Parámetros de configuración (valores en el código)
+- Entrada del usuario (terminal/stdin)
+
+SALIDA:
+- Pantalla/terminal (stdout) - para mensajes de progreso
+- Archivos de imagen (.png) - resultados del fractal Mandelbrot
+- Archivos de métricas/logs - tiempos de ejecución
+
+
+TÉCNICAS DE ORGANIZACIÓN DE E/S:
+---------------------------------
+
+1. E/S PROGRAMADA (Polling)
+   - CPU verifica constantemente si el dispositivo está listo
+   - Ventaja: Simple de implementar
+   - Desventaja: Desperdicia ciclos de CPU
+
+2. E/S POR INTERRUPCIONES
+   - El dispositivo notifica a la CPU cuando termina
+   - Ventaja: CPU puede hacer otro trabajo mientras espera
+   - Desventaja: Overhead por cada interrupción
+
+3. ACCESO DIRECTO A MEMORIA (DMA)
+   - Transferencia de datos sin intervención de CPU
+   - Ventaja: CPU completamente libre durante transferencia
+   - Desventaja: Requiere hardware especializado
+
+
+TÉCNICA MÁS EFICIENTE PARA TU APLICACIÓN:
+------------------------------------------
+
+RECOMENDACIÓN: **DMA (Acceso Directo a Memoria)**
+
+JUSTIFICACIÓN:
+- Tu aplicación genera imágenes PNG grandes (1920x1080 pixels)
+- El tamaño del archivo es significativo (varios MB)
+- Usar DMA permite que la CPU continúe calculando el fractal
+  mientras el controlador de disco escribe la imagen
+- En Linux moderno, las operaciones de escritura de archivos
+  grandes automáticamente usan DMA cuando está disponible
+- Esto es especialmente importante en la versión multihilo donde
+  quieres maximizar el uso de CPU para cálculos paralelos
+
+SEGUNDA OPCIÓN: **E/S por Interrupciones**
+- Para la salida a terminal (stdout) donde escribes poco texto
+- No requiere la complejidad de DMA para mensajes pequeños
+
+
+COMANDOS PARA CAPTURAR EN TU REPORTE:
+--------------------------------------
+
+# 1. Captura de lsblk (dispositivos de almacenamiento)
+lsblk > parte4_lsblk.txt
+
+# 2. Captura de lspci (dispositivos PCI)
+lspci > parte4_lspci.txt
+
+# 3. Captura de iostat (estadísticas de E/S)
+iostat -x 2 3 > parte4_iostat.txt
+
+# 4. Archivos abiertos por tu aplicación
+# (ejecuta MIENTRAS corre tu script)
+lsof -c python3 > parte4_lsof.txt
+
+# 5. Interrupciones del sistema
+cat /proc/interrupts > parte4_interrupts.txt
+
+
+NOTA: Si algún comando requiere sudo, ejecuta:
+sudo comando > archivo.txt
